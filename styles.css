@@ -1,0 +1,50 @@
+/* Configuración general */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f2f6fa;
+    color: #25313c;
+    text-align: center;
+}
+
+/* Contenedor principal */
+.contenedor {
+    width: 80%;
+    max-width: 700px;
+    margin: 100px auto;
+    padding: 40px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+h1 {
+    margin-bottom: 10px;
+    color: #1565c0;
+    font-size: 42px;
+}
+
+h2 {
+    color: #455a64;
+    font-size: 25px;
+}
+
+p {
+    margin: 25px 0;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    background-color: #1565c0;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0d47a1;
+}
