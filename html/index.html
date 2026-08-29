@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inventario Minecraft</title>
+
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <img
+            class="logo"
+            src="../imagenes/logo-santo-tomas.png"
+            alt="Logo de Santo Tomás"
+        >
+
+        <h1>Inventario de Minecraft</h1>
+
+        <p>
+            Sistema para organizar los cofres y objetos almacenados
+            dentro de nuestro mundo de Minecraft.
+        </p>
+
+<form id="formularioCofre">
+    <div class="campo">
+        <label for="numeroCofre">N.º de cofre</label>
+        <input type="number" id="numeroCofre" min="1" required>
+    </div>
+
+    <div class="campo">
+        <label for="categoriaCofre">Categoría</label>
+        <input type="text" id="categoriaCofre" required>
+    </div>
+
+    <div class="campo">
+        <label for="cantidadItems">Cantidad de ítems</label>
+        <input type="number" id="cantidadItems" min="0" required>
+    </div>
+
+    <button type="submit">Agregar cofre</button>
+</form>
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N.º de cofre</th>
+                        <th>Categoría del cofre</th>
+                        <th>Cantidad de ítems</th>
+                    </tr>
+                </thead>
+
+                <tbody id="cuerpoTabla">
+                    <th>Acciones</th>
+                    <tr>
+    <th>N.º de cofre</th>
+    <th>Categoría del cofre</th>
+    <th>Cantidad de ítems</th>
+    <th>Acciones</th>
+</tr>
+                    <tr>
+                        <td>1</td>
+                        <td>Minerales</td>
+                        <td>47</td>
+                    </tr>
+
+                    <tr>
+                        <td>2</td>
+                        <td>Alimentos</td>
+                        <td>32</td>
+                    </tr>
+
+                    <tr>
+                        <td>3</td>
+                        <td>Herramientas</td>
+                        <td>15</td>
+                    </tr>
+
+                    <tr>
+                        <td>4</td>
+                        <td>Construcción</td>
+                        <td>64</td>
+                    </tr>
+
+                    <tr>
+                        <td>5</td>
+                        <td>Objetos especiales</td>
+                        <td>12</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+<script src="../js/script.js"></script>
+</body>
+</html>
