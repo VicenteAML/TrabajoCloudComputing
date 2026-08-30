@@ -1,6 +1,32 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    writeBatch,
+    onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDW3izXi3iKhkN5_mnY5oFngvPcOG7SfX4",
+    authDomain: "trabajo-en-la-nube-51283.firebaseapp.com",
+    projectId: "trabajo-en-la-nube-51283",
+    storageBucket: "trabajo-en-la-nube-51283.firebasestorage.app",
+    messagingSenderId: "227996026545",
+    appId: "1:227996026545:web:90fa728d70d75a74a94490"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const cofresRef = collection(db, "cofres");
+
 const formulario = document.getElementById("formularioCofre");
 const cuerpoTabla = document.getElementById("cuerpoTabla");
-
 const CLAVE_ALMACENAMIENTO = "inventarioMinecraft";
 
 function crearFila(numero, categoria, cantidad) {
@@ -30,79 +56,119 @@ function crearFila(numero, categoria, cantidad) {
     cuerpoTabla.appendChild(fila);
 }
 
-function guardarInventario() {
-    const cofres = [];
-
-    cuerpoTabla.querySelectorAll("tr").forEach(function (fila) {
-        const celdas = fila.querySelectorAll("td");
-
-        cofres.push({
-            numero: celdas[0].textContent,
-            categoria: celdas[1].textContent,
-            cantidad: celdas[2].textContent
-        });
+function obtenerFilasActuales() {
+    return Array.from(cuerpoTabla.querySelectorAll("tr")).map(function (fila) {
+        return {
+            numero: fila.cells[0].textContent.trim(),
+            categoria: fila.cells[1].textContent.trim(),
+            cantidad: Number(fila.cells[2].textContent)
+        };
     });
-
-    localStorage.setItem(
-        CLAVE_ALMACENAMIENTO,
-        JSON.stringify(cofres)
-    );
 }
 
-function cargarInventario() {
-    const datosGuardados = localStorage.getItem(CLAVE_ALMACENAMIENTO);
+async function importarInventarioInicial() {
+    const datosNube = await getDocs(cofresRef);
 
-    if (datosGuardados === null) {
-        guardarInventario();
+    if (!datosNube.empty) {
         return;
     }
 
-    const cofres = JSON.parse(datosGuardados);
-    cuerpoTabla.innerHTML = "";
+    let cofres = [];
+    const datosLocales = localStorage.getItem(CLAVE_ALMACENAMIENTO);
 
-    cofres.forEach(function (cofre) {
-        crearFila(
-            cofre.numero,
-            cofre.categoria,
-            cofre.cantidad
+    if (datosLocales !== null) {
+        try {
+            cofres = JSON.parse(datosLocales).map(function (cofre) {
+                return {
+                    numero: String(cofre.numero).trim(),
+                    categoria: String(cofre.categoria).trim(),
+                    cantidad: Number(cofre.cantidad)
+                };
+            });
+        } catch (error) {
+            cofres = [];
+        }
+    }
+
+    if (cofres.length === 0) {
+        cofres = obtenerFilasActuales();
+    }
+
+    cofres = cofres.filter(function (cofre) {
+        return (
+            cofre.numero !== "" &&
+            cofre.categoria !== "" &&
+            Number.isInteger(cofre.cantidad) &&
+            cofre.cantidad >= 0
         );
     });
-}
 
-formulario.addEventListener("submit", function (evento) {
-    evento.preventDefault();
-
-    const numero = document.getElementById("numeroCofre").value;
-    const categoria = document.getElementById("categoriaCofre").value.trim();
-    const cantidad = document.getElementById("cantidadItems").value;
-
-    const numeroRepetido = Array.from(
-        cuerpoTabla.querySelectorAll("tr")
-    ).some(function (fila) {
-        return fila.cells[0].textContent === numero;
-    });
-
-    if (numeroRepetido) {
-        alert("Ya existe un cofre con ese número.");
+    if (cofres.length === 0) {
         return;
     }
 
-    crearFila(numero, categoria, cantidad);
-    guardarInventario();
-    formulario.reset();
+    const lote = writeBatch(db);
+
+    cofres.forEach(function (cofre) {
+        lote.set(doc(db, "cofres", cofre.numero), cofre);
+    });
+
+    await lote.commit();
+}
+
+formulario.addEventListener("submit", async function (evento) {
+    evento.preventDefault();
+
+    const numero = document.getElementById("numeroCofre").value.trim();
+    const categoria = document.getElementById("categoriaCofre").value.trim();
+    const cantidad = Number(document.getElementById("cantidadItems").value);
+
+    if (numero === "" || categoria === "") {
+        alert("Completa todos los campos.");
+        return;
+    }
+
+    if (!Number.isInteger(cantidad) || cantidad < 0) {
+        alert("La cantidad debe ser un número entero válido.");
+        return;
+    }
+
+    try {
+        const referenciaCofre = doc(db, "cofres", numero);
+        const cofreExistente = await getDoc(referenciaCofre);
+
+        if (cofreExistente.exists()) {
+            alert("Ya existe un cofre con ese número.");
+            return;
+        }
+
+        await setDoc(referenciaCofre, {
+            numero: numero,
+            categoria: categoria,
+            cantidad: cantidad
+        });
+
+        formulario.reset();
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo guardar el cofre en Firebase.");
+    }
 });
 
-cuerpoTabla.addEventListener("click", function (evento) {
+cuerpoTabla.addEventListener("click", async function (evento) {
     const fila = evento.target.closest("tr");
+
+    if (fila === null) {
+        return;
+    }
+
+    const numero = fila.cells[0].textContent.trim();
 
     if (evento.target.classList.contains("boton-editar")) {
         const categoriaActual = fila.cells[1].textContent;
         const cantidadActual = fila.cells[2].textContent;
 
-        const nuevaCategoria = prompt(
-            "Nueva categoría:",
-            categoriaActual
-        );
+        const nuevaCategoria = prompt("Nueva categoría:", categoriaActual);
 
         if (nuevaCategoria === null) {
             return;
@@ -113,10 +179,7 @@ cuerpoTabla.addEventListener("click", function (evento) {
             return;
         }
 
-        const nuevaCantidad = prompt(
-            "Nueva cantidad de ítems:",
-            cantidadActual
-        );
+        const nuevaCantidad = prompt("Nueva cantidad de ítems:", cantidadActual);
 
         if (nuevaCantidad === null) {
             return;
@@ -133,15 +196,69 @@ cuerpoTabla.addEventListener("click", function (evento) {
             return;
         }
 
-        fila.cells[1].textContent = nuevaCategoria.trim();
-        fila.cells[2].textContent = cantidadNumero;
-        guardarInventario();
+        try {
+            await updateDoc(doc(db, "cofres", numero), {
+                categoria: nuevaCategoria.trim(),
+                cantidad: cantidadNumero
+            });
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo editar el cofre en Firebase.");
+        }
     }
 
     if (evento.target.classList.contains("boton-eliminar")) {
-        fila.remove();
-        guardarInventario();
+        const confirmar = confirm("¿Quieres eliminar el cofre " + numero + "?");
+
+        if (!confirmar) {
+            return;
+        }
+
+        try {
+            await deleteDoc(doc(db, "cofres", numero));
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo eliminar el cofre de Firebase.");
+        }
     }
 });
 
-cargarInventario();
+async function iniciarInventario() {
+    try {
+        await importarInventarioInicial();
+
+        onSnapshot(
+            cofresRef,
+            function (resultado) {
+                const cofres = resultado.docs.map(function (documento) {
+                    return documento.data();
+                });
+
+                cofres.sort(function (a, b) {
+                    const diferencia = Number(a.numero) - Number(b.numero);
+
+                    if (!Number.isNaN(diferencia) && diferencia !== 0) {
+                        return diferencia;
+                    }
+
+                    return String(a.numero).localeCompare(String(b.numero));
+                });
+
+                cuerpoTabla.innerHTML = "";
+
+                cofres.forEach(function (cofre) {
+                    crearFila(cofre.numero, cofre.categoria, cofre.cantidad);
+                });
+            },
+            function (error) {
+                console.error(error);
+                alert("No se pudo leer el inventario desde Firebase. Revisa las reglas de Firestore.");
+            }
+        );
+    } catch (error) {
+        console.error(error);
+        alert("No se pudo conectar con Firebase. Revisa la configuración y las reglas.");
+    }
+}
+
+iniciarInventario();
