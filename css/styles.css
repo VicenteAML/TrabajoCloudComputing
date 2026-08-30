@@ -159,3 +159,12 @@ tbody tr:hover {
         grid-template-columns: 1fr;
     }
 }
+.boton-editar {
+    padding: 8px 12px;
+    margin-right: 8px;
+    background-color: #e59400;
+}
+
+.boton-editar:hover {
+    background-color: #b87300;
+}

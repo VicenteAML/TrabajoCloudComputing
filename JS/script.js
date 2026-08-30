@@ -15,11 +15,17 @@ function crearFila(numero, categoria, cantidad) {
     celdaCategoria.textContent = categoria;
     celdaCantidad.textContent = cantidad;
 
+    const botonEditar = document.createElement("button");
+    botonEditar.textContent = "Editar";
+    botonEditar.type = "button";
+    botonEditar.classList.add("boton-editar");
+
     const botonEliminar = document.createElement("button");
     botonEliminar.textContent = "Eliminar";
     botonEliminar.type = "button";
     botonEliminar.classList.add("boton-eliminar");
 
+    celdaAcciones.appendChild(botonEditar);
     celdaAcciones.appendChild(botonEliminar);
     cuerpoTabla.appendChild(fila);
 }
@@ -67,7 +73,7 @@ formulario.addEventListener("submit", function (evento) {
     evento.preventDefault();
 
     const numero = document.getElementById("numeroCofre").value;
-    const categoria = document.getElementById("categoriaCofre").value;
+    const categoria = document.getElementById("categoriaCofre").value.trim();
     const cantidad = document.getElementById("cantidadItems").value;
 
     const numeroRepetido = Array.from(
@@ -87,8 +93,53 @@ formulario.addEventListener("submit", function (evento) {
 });
 
 cuerpoTabla.addEventListener("click", function (evento) {
+    const fila = evento.target.closest("tr");
+
+    if (evento.target.classList.contains("boton-editar")) {
+        const categoriaActual = fila.cells[1].textContent;
+        const cantidadActual = fila.cells[2].textContent;
+
+        const nuevaCategoria = prompt(
+            "Nueva categoría:",
+            categoriaActual
+        );
+
+        if (nuevaCategoria === null) {
+            return;
+        }
+
+        if (nuevaCategoria.trim() === "") {
+            alert("La categoría no puede quedar vacía.");
+            return;
+        }
+
+        const nuevaCantidad = prompt(
+            "Nueva cantidad de ítems:",
+            cantidadActual
+        );
+
+        if (nuevaCantidad === null) {
+            return;
+        }
+
+        const cantidadNumero = Number(nuevaCantidad);
+
+        if (
+            nuevaCantidad.trim() === "" ||
+            !Number.isInteger(cantidadNumero) ||
+            cantidadNumero < 0
+        ) {
+            alert("La cantidad debe ser un número entero válido.");
+            return;
+        }
+
+        fila.cells[1].textContent = nuevaCategoria.trim();
+        fila.cells[2].textContent = cantidadNumero;
+        guardarInventario();
+    }
+
     if (evento.target.classList.contains("boton-eliminar")) {
-        evento.target.closest("tr").remove();
+        fila.remove();
         guardarInventario();
     }
 });
